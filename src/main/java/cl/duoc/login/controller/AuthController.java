@@ -13,8 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 // Indica que esta clase es un controlador REST
 @RestController
@@ -41,7 +44,7 @@ public class AuthController {
         @ApiResponse(responseCode = "403",description = "Usuario o pass son invalidos", content = @Content),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
-    public ResponseEntity<DtoAuthResponse> login(
+    public ResponseEntity<EntityModel<DtoAuthResponse>> login(
 
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Estos son ejemplos de datos del request",required = true, content = @Content(mediaType = "application/json",schema = @Schema(implementation = DtoAuthRequest.class),examples = @ExampleObject(name = "Ejemplo de body", value = """
             {
@@ -56,7 +59,13 @@ public class AuthController {
         // Llama al servicio para validar credenciales y generar token
         DtoAuthResponse response = authService.login(request);
 
+        EntityModel<DtoAuthResponse> recurso = EntityModel.of(response);
+
+        recurso.add(linkTo(methodOn(AuthController.class)
+                .login(request))
+                .withSelfRel());
+
         // Retorna HTTP 200 OK con el token
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(recurso);
     }
 }
